@@ -1,6 +1,8 @@
 package storage
 
-import "sync"
+import (
+	"sync"
+)
 
 type User struct {
 	ID   int    `json:"id"`
@@ -28,6 +30,27 @@ func (s *Store) CreateUser(name string, age int) User {
 	return user
 }
 
+func (s *Store) UpdateUser(id int, name string, age int) (User, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	index := -1
+	for i, v := range s.users {
+		if id == v.ID {
+			index = i
+		}
+	}
+
+	if index == -1 {
+		return User{}, false
+	}
+
+	s.users[index].Name = name
+	s.users[index].Age = age
+
+	return s.users[index], true
+}
+
 func (s *Store) GetUser(id int) (User, bool) {
 	var user User
 	var find bool = false
@@ -41,6 +64,29 @@ func (s *Store) GetUser(id int) (User, bool) {
 			break
 		}
 	}
+
+	return user, find
+}
+
+func (s *Store) DeleteUser(id int) (User, bool) {
+	var user User
+	var find bool = false
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	index := -1
+
+	for i, v := range s.users {
+		if v.ID == id {
+			index = i
+			break
+		}
+	}
+	if index == -1 {
+		return user, false
+	}
+
+	s.users = append(s.users[:index], s.users[index+1:]...)
 
 	return user, find
 }

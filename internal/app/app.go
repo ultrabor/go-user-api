@@ -17,8 +17,10 @@ func RunApp() {
 
 	mux := http.NewServeMux()
 
-	mux.HandleFunc("/users", handlers.CreateUserHandler(store))
-	mux.HandleFunc("/users/", handlers.GetUserHandler(store))
+	mux.HandleFunc("/create", handlers.CreateUserHandler(store))
+	mux.HandleFunc("/get/", handlers.GetUserHandler(store))
+	mux.HandleFunc("/update", handlers.UpdateUserHandler(store))
+	mux.HandleFunc("/delete/", handlers.DeleteUserHandler(store))
 
 	mid := mw.LoggingMiddleware(logger, mux)
 
