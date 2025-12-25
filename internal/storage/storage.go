@@ -38,6 +38,7 @@ func (s *Store) UpdateUser(id int, name string, age int) (User, bool) {
 	for i, v := range s.users {
 		if id == v.ID {
 			index = i
+			break
 		}
 	}
 
@@ -70,7 +71,7 @@ func (s *Store) GetUser(id int) (User, bool) {
 
 func (s *Store) DeleteUser(id int) (User, bool) {
 	var user User
-	var find bool = false
+	var find bool = true
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -93,4 +94,42 @@ func (s *Store) DeleteUser(id int) (User, bool) {
 
 func NewStore() *Store {
 	return &Store{mu: sync.Mutex{}}
+}
+
+func (s *Store) GetAllUser(limit, page int, name string, age int) []User {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	var users []User
+
+	for _, v := range s.users {
+		if name != "" && name != v.Name {
+			continue
+		}
+		if age != -1 && age != v.Age {
+			continue
+		}
+
+		users = append(users, v)
+	}
+
+	if limit <= 0 {
+		limit = 10
+	}
+	if page <= 0 {
+		page = 1
+	}
+
+	offset := (page - 1) * limit
+
+	if offset >= len(users) {
+		return []User{}
+	}
+
+	end := offset + limit
+	if end > len(users) {
+		end = len(users)
+	}
+
+	return users[offset:end]
 }

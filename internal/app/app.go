@@ -19,8 +19,9 @@ func RunApp() {
 
 	mux.HandleFunc("/create", handlers.CreateUserHandler(store))
 	mux.HandleFunc("/get/", handlers.GetUserHandler(store))
-	mux.HandleFunc("/update", handlers.UpdateUserHandler(store))
+	mux.HandleFunc("/update/", handlers.UpdateUserHandler(store))
 	mux.HandleFunc("/delete/", handlers.DeleteUserHandler(store))
+	mux.HandleFunc("/users", handlers.GetAllUserHandler(store))
 
 	mid := mw.LoggingMiddleware(logger, mux)
 

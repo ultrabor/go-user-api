@@ -1,8 +1,7 @@
-POST http://localhost:8080/update
+POST http://localhost:8080/update/1
 Content-Type: application/json
 
 {
-  "id":2,
-  "name": "Иоанн",
+  "name": "Ioan",
   "age": 52
 }
