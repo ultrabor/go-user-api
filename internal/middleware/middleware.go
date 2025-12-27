@@ -22,7 +22,7 @@ func LoggingMiddleware(logger *slog.Logger, next http.Handler) http.Handler {
 
 		rw := &responseWriter{
 			ResponseWriter: w,
-			statusCode:     http.StatusOK, // статус по умолчанию
+			statusCode:     http.StatusOK,
 		}
 		next.ServeHTTP(rw, r)
 

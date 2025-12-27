@@ -5,25 +5,35 @@ import (
 	"net/http"
 	"os"
 
-	handlers "github.com/ultrabor/go-user-api/internal/handlers"
-	mw "github.com/ultrabor/go-user-api/internal/middleware"
-	st "github.com/ultrabor/go-user-api/internal/storage"
+	"github.com/ultrabor/go-user-api/internal/config"
+	"github.com/ultrabor/go-user-api/internal/server"
+
+	storage "github.com/ultrabor/go-user-api/internal/storage"
+	memory "github.com/ultrabor/go-user-api/internal/storage/memory"
+	postgres "github.com/ultrabor/go-user-api/internal/storage/postgres"
+
+	_ "github.com/lib/pq"
 )
 
 func RunApp() {
+
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	store := st.NewStore()
+	usePostgres := true
 
-	mux := http.NewServeMux()
+	var store storage.UserStore
 
-	mux.HandleFunc("/create", handlers.CreateUserHandler(store))
-	mux.HandleFunc("/get/", handlers.GetUserHandler(store))
-	mux.HandleFunc("/update/", handlers.UpdateUserHandler(store))
-	mux.HandleFunc("/delete/", handlers.DeleteUserHandler(store))
-	mux.HandleFunc("/users", handlers.GetAllUserHandler(store))
+	if usePostgres {
+		s, err := postgres.New(config.GetPostgresDSN(), logger)
+		if err != nil {
+			panic(err)
+		}
+		store = s
+	} else {
+		store = memory.New(logger)
+	}
 
-	mid := mw.LoggingMiddleware(logger, mux)
+	ser := server.Server(logger, store)
 
-	http.ListenAndServe(":8080", mid)
+	http.ListenAndServe(":8080", ser)
 }
