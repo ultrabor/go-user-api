@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
-	m "github.com/ultrabor/go-user-api/internal/models"
+	m "github.com/ultrabor/go-user-api/internal/domain"
 )
 
 /// create dirictory for user struct -- entity
@@ -104,17 +104,17 @@ func NewStore() *Store {
 	return &Store{mu: sync.Mutex{}}
 }
 
-func (s *Store) GetAll(limit, page int, name *string, age *int) ([]m.User, error) {
+func (s *Store) GetAll(limit, page int, name string, age int) ([]m.User, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	var users []m.User
 
 	for _, v := range s.users {
-		if name != nil && *name != v.Name {
+		if name != v.Name {
 			continue
 		}
-		if age != nil && *age != v.Age {
+		if age != v.Age {
 			continue
 		}
 

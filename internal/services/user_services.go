@@ -1,19 +1,18 @@
 package services
 
 import (
-	"github.com/ultrabor/go-user-api/internal/models"
-	"github.com/ultrabor/go-user-api/internal/storage"
+	"github.com/ultrabor/go-user-api/internal/domain"
 )
 
 type UserService struct {
-	store storage.UserStore
+	store domain.UserStore
 }
 
-func NewUserService(store storage.UserStore) *UserService {
+func NewUserService(store domain.UserStore) *UserService {
 	return &UserService{store: store}
 }
 
-func (s *UserService) GetAllUsers(limit, page int, name *string, age *int) ([]models.User, error) {
+func (s *UserService) GetAllUsers(limit, page int, name string, age int) ([]domain.User, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -29,7 +28,7 @@ func (s *UserService) GetAllUsers(limit, page int, name *string, age *int) ([]mo
 	return users, nil
 }
 
-func (s *UserService) CreateUser(name string, age int) (models.User, error) {
+func (s *UserService) CreateUser(name string, age int) (domain.User, error) {
 	return s.store.CreateUser(name, age)
 }
 
@@ -37,10 +36,10 @@ func (s *UserService) DeleteUser(id int) error {
 	return s.store.DeleteUser(id)
 }
 
-func (s *UserService) GetUser(id int) (models.User, error) {
+func (s *UserService) GetUser(id int) (domain.User, error) {
 	return s.store.GetUser(id)
 }
 
-func (s *UserService) UpdateUser(u models.User) (models.User, error) {
+func (s *UserService) UpdateUser(u domain.User) (domain.User, error) {
 	return s.store.UpdateUser(u)
 }

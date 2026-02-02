@@ -7,7 +7,7 @@ import (
 	"log/slog"
 
 	_ "github.com/lib/pq"
-	m "github.com/ultrabor/go-user-api/internal/models"
+	m "github.com/ultrabor/go-user-api/internal/domain"
 )
 
 type Store struct {
@@ -103,7 +103,7 @@ func (s *Store) GetUser(id int) (m.User, error) {
 	return user, nil
 }
 
-func (s *Store) GetAll(limit, page int, name *string, age *int) ([]m.User, error) {
+func (s *Store) GetAll(limit, page int, name string, age int) ([]m.User, error) {
 
 	offset := (page - 1) * limit
 
@@ -112,16 +112,16 @@ func (s *Store) GetAll(limit, page int, name *string, age *int) ([]m.User, error
 	args := []interface{}{}
 	argId := 1
 
-	if name != nil && *name != "" {
+	if name != "" {
 		query += fmt.Sprintf(" AND name = $%d", argId)
 		argId++
-		args = append(args, *name)
+		args = append(args, name)
 	}
 
-	if age != nil && *age > 0 {
+	if age > 0 {
 		query += fmt.Sprintf(" AND age = $%d", argId)
 		argId++
-		args = append(args, *name)
+		args = append(args, name)
 	}
 
 	query += fmt.Sprintf(" ORDER BY id LIMIT $%d OFFSET $%d", argId, argId+1)
