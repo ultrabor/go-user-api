@@ -14,10 +14,10 @@ type UserStore interface {
 	GetAll(limit, page int, name string, age int) ([]User, error)
 }
 
-type UserService interface {
-	GetAllUsers(limit, page int, name string, age int) ([]User, error)
-	CreateUser(name string, age int) (User, error)
-	DeleteUser(id int) error
-	GetUser(id int) (User, error)
-	UpdateUser(u User) (User, error)
-}
+// type UserService interface {
+// 	GetAllUsers(limit, page int, name string, age int) ([]User, error)
+// 	CreateUser(name string, age int) (User, error)
+// 	DeleteUser(id int) error
+// 	GetUser(id int) (User, error)
+// 	UpdateUser(u User) (User, error)
+// }

@@ -41,7 +41,7 @@ func RunApp() {
 
 	userService := services.NewUserService(store)
 
-	handler := delivery.NewUserHandler(userService)
+	handler := delivery.NewUserHandler(*userService)
 
 	gin.SetMode(gin.ReleaseMode)
 
