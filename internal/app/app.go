@@ -25,11 +25,9 @@ func RunApp() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	usePostgres := true
-
 	var store domain.UserStore
 
-	if usePostgres {
+	if config.UsePostgres() {
 		s, err := postgres.New(config.GetPostgresDSN(), logger)
 		if err != nil {
 			panic(err)

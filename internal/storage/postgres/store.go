@@ -53,7 +53,7 @@ func (s *Store) DeleteUser(id int) error {
 	n, _ := res.RowsAffected()
 
 	if n == 0 {
-		return errors.New("user not found")
+		return m.ErrUserNotFound
 	}
 
 	return nil
@@ -80,7 +80,7 @@ WHERE id = $1;`
 	}
 
 	if n == 0 {
-		return m.User{}, errors.New("user not found")
+		return m.User{}, m.ErrUserNotFound
 	}
 
 	user, err := s.GetUser(u.ID)
@@ -97,6 +97,9 @@ func (s *Store) GetUser(id int) (m.User, error) {
 	var user m.User
 
 	err := row.Scan(&user.ID, &user.Name, &user.Age)
+	if errors.Is(err, sql.ErrNoRows) {
+		return m.User{}, m.ErrUserNotFound
+	}
 	if err != nil {
 		return m.User{}, err
 	}
@@ -121,7 +124,7 @@ func (s *Store) GetAll(limit, page int, name string, age int) ([]m.User, error) 
 	if age > 0 {
 		query += fmt.Sprintf(" AND age = $%d", argId)
 		argId++
-		args = append(args, name)
+		args = append(args, age)
 	}
 
 	query += fmt.Sprintf(" ORDER BY id LIMIT $%d OFFSET $%d", argId, argId+1)
@@ -135,7 +138,7 @@ func (s *Store) GetAll(limit, page int, name string, age int) ([]m.User, error) 
 	}
 	defer rows.Close()
 
-	var users []m.User
+	users := []m.User{}
 	for rows.Next() {
 		var user m.User
 		err = rows.Scan(&user.ID, &user.Name, &user.Age)
