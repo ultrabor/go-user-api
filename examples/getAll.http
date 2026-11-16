@@ -1,1 +1,4 @@
-GET http://localhost:8080/users
+GET http://localhost:8080/users?page=1&limit=20
+
+### Filter by name and age
+GET http://localhost:8080/users?name=Ivan&age=22

@@ -44,7 +44,7 @@ func (h *UserHandler) CreateUserHandler(c *gin.Context) {
 
 	user, err := h.service.CreateUser(input.Name, input.Age)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -58,7 +58,11 @@ func (h *UserHandler) DeleteUserHandler(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteUser(id); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		if errors.Is(err, domain.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -73,7 +77,11 @@ func (h *UserHandler) GetUserHandler(c *gin.Context) {
 
 	user, err := h.service.GetUser(id)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		if errors.Is(err, domain.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -86,13 +94,13 @@ func (h *UserHandler) GetAllUserHandler(c *gin.Context) {
 
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	page, err := strconv.Atoi(pageStr)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -102,14 +110,14 @@ func (h *UserHandler) GetAllUserHandler(c *gin.Context) {
 	if ageStr := c.Query("age"); ageStr != "" {
 		age, err = strconv.Atoi(ageStr)
 		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err})
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
 	}
 
 	users, err := h.service.GetAllUsers(limit, page, name, age)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -130,7 +138,7 @@ func (h *UserHandler) UpdateUserHandler(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	if input.Age != nil {
+	if input.Age != nil && *input.Age <= 0 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "age must be > 0"})
 		return
 	}
@@ -141,6 +149,10 @@ func (h *UserHandler) UpdateUserHandler(c *gin.Context) {
 
 	existing, err := h.service.GetUser(id)
 	if err != nil {
+		if errors.Is(err, domain.ErrUserNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+			return
+		}
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to fetch user"})
 		return
 	}

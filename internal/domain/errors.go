@@ -3,5 +3,5 @@ package domain
 import "errors"
 
 var (
-	ErrUserNotFound = errors.Join(errors.New("product not found"))
+	ErrUserNotFound = errors.New("user not found")
 )

@@ -1,8 +1,8 @@
 package memory
 
 import (
-	"errors"
 	"log/slog"
+	"sort"
 	"sync"
 
 	m "github.com/ultrabor/go-user-api/internal/domain"
@@ -50,7 +50,7 @@ func (s *Store) UpdateUser(u m.User) (m.User, error) {
 	}
 
 	if index == -1 {
-		return m.User{}, errors.New("not fount")
+		return m.User{}, m.ErrUserNotFound
 	}
 
 	if u.Name != "" {
@@ -76,7 +76,7 @@ func (s *Store) GetUser(id int) (m.User, error) {
 		}
 	}
 
-	return m.User{}, errors.New("not fount")
+	return m.User{}, m.ErrUserNotFound
 }
 
 func (s *Store) DeleteUser(id int) error {
@@ -92,7 +92,7 @@ func (s *Store) DeleteUser(id int) error {
 		}
 	}
 	if index == -1 {
-		return errors.New("not fount")
+		return m.ErrUserNotFound
 	}
 
 	s.users = append(s.users[:index], s.users[index+1:]...)
@@ -108,23 +108,26 @@ func (s *Store) GetAll(limit, page int, name string, age int) ([]m.User, error) 
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	var users []m.User
+	users := []m.User{}
 
 	for _, v := range s.users {
-		if name != v.Name {
+		if name != "" && name != v.Name {
 			continue
 		}
-		if age != v.Age {
+		if age > 0 && age != v.Age {
 			continue
 		}
 
 		users = append(users, v)
 	}
 
+	// keep the same order as the postgres store (ORDER BY id)
+	sort.Slice(users, func(i, j int) bool { return users[i].ID < users[j].ID })
+
 	offset := (page - 1) * limit
 
 	if offset >= len(users) {
-		return []m.User{}, errors.New("not fount")
+		return []m.User{}, nil
 	}
 
 	end := offset + limit

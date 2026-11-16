@@ -19,6 +19,12 @@ func GetPostgresDSN() string {
 	)
 }
 
+// UsePostgres reports whether STORAGE selects PostgreSQL. Default is postgres;
+// STORAGE=memory switches to the in-memory store.
+func UsePostgres() bool {
+	return getEnv("STORAGE", "postgres") != "memory"
+}
+
 func getEnv(key, defaultValue string) string {
 	if val, ok := os.LookupEnv(key); ok {
 		return val

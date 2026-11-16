@@ -1,149 +1,107 @@
-# Go User API   
+# Go User API
 
-Простой и расширяемый REST API на Go для управления пользователями.  
-Проект построен по модульной (чистой) архитектуре: **handlers → services → storage**.  
-Поддерживаются **in-memory** и **PostgreSQL** хранилища, логирование через middleware.
+REST API for user management written in Go with Gin. Layered structure: **delivery → services → storage**. Two interchangeable storages: PostgreSQL and in-memory.
 
----
+## Features
 
-## Возможности
+- CRUD for users: create, get by ID, list, update, delete
+- List with pagination (`page`, `limit`) and filters (`name`, `age`)
+- Partial update: send only the fields you want to change
+- Request logging middleware with `log/slog`
+- Graceful shutdown on `SIGINT` / `SIGTERM`
+- `404` for missing users, `400` for invalid input
 
-- Создание пользователя  
-- Получение пользователя по ID  
-- Получение списка пользователей  
-- Обновление пользователя  
-- Удаление пользователя  
-- Логирование HTTP-запросов  
-- Хранилища:
-  - In-memory
-  - PostgreSQL
-
----
-
-## Быстрый старт
-
-Запуск с in-memory хранилищем:
+## Quick start (in-memory)
 
 ```bash
 git clone https://github.com/ultrabor/go-user-api.git
 cd go-user-api
-go run ./cmd
+STORAGE=memory go run ./cmd
 ```
 
-Сервер будет доступен по адресу:  
-`http://localhost:8080`
+The server listens on `http://localhost:8080`.
 
----
+## Run with PostgreSQL
 
-## Запуск с PostgreSQL
+PostgreSQL is the default storage.
 
-### 1. Миграция базы данных
+1. Create the table:
+
+   ```bash
+   psql -h localhost -U postgres -f migration/001_create_users_table.sql
+   ```
+
+2. Set the connection (defaults in parentheses):
+
+   | Variable | Default |
+   |---|---|
+   | `DB_HOST` | `localhost` |
+   | `DB_PORT` | `5432` |
+   | `DB_USER` | `postgres` |
+   | `DB_PASSWORD` | `123` |
+   | `DB_NAME` | `postgres` |
+   | `DB_SSLMODE` | `disable` |
+
+3. Run:
+
+   ```bash
+   go run ./cmd
+   ```
+
+## API
+
+| Method | Path | Description | Success |
+|---|---|---|---|
+| `POST` | `/users` | Create a user | `201` `{"id": 1}` |
+| `GET` | `/users` | List users | `200` |
+| `GET` | `/users/{id}` | Get a user | `200` |
+| `PUT` | `/users/{id}` | Update name and/or age | `200` |
+| `DELETE` | `/users/{id}` | Delete a user | `204` |
+
+Query parameters for `GET /users`: `page` (default `1`), `limit` (default `20`), `name`, `age`.
+
+Errors are returned as `{"error": "message"}`.
+
+## Examples
 
 ```bash
-psql postgres://user:pass@localhost:5432/dbname \
-  -f migration/001_create_users_table.sql
-```
-
-### 2. Переменные окружения
-
-```bash
-export STORAGE=postgres
-export DATABASE_URL="postgres://user:pass@localhost:5432/dbname?sslmode=disable"
-```
-
-### 3. Запуск
-
-```bash
-go run ./cmd
-```
-
----
-
-## API Endpoints
-
-| Метод  | Путь           | Описание |
-|------:|----------------|----------|
-| POST   | `/create`      | Создать пользователя |
-| GET    | `/get/{id}`    | Получить пользователя |
-| GET    | `/users`       | Получить всех пользователей |
-| PUT    | `/update/{id}` | Обновить пользователя |
-| DELETE | `/delete/{id}` | Удалить пользователя |
-
----
-
-## Примеры запросов
-
-### Создание пользователя
-
-```bash
-curl -X POST http://localhost:8080/create \
+# create
+curl -X POST http://localhost:8080/users \
   -H "Content-Type: application/json" \
   -d '{"name":"Ivan","age":25}'
-```
 
-### Получение пользователя
+# list with filters
+curl "http://localhost:8080/users?name=Ivan&age=25&page=1&limit=20"
 
-```bash
-curl http://localhost:8080/get/1
-```
+# get
+curl http://localhost:8080/users/1
 
-### Получение списка пользователей
-
-```bash
-curl http://localhost:8080/users
-```
-
-### Обновление пользователя
-
-```bash
-curl -X PUT http://localhost:8080/update/1 \
+# update only age
+curl -X PUT http://localhost:8080/users/1 \
   -H "Content-Type: application/json" \
-  -d '{"name":"Ivan Petrov","age":26}'
+  -d '{"age":26}'
+
+# delete
+curl -X DELETE http://localhost:8080/users/1
 ```
 
-### Удаление пользователя
+Ready-made requests for the VS Code REST Client / JetBrains HTTP Client are in [`examples/`](examples).
 
-```bash
-curl -X DELETE http://localhost:8080/delete/1
-```
-
----
-
-## Структура проекта
+## Project structure
 
 ```
-.
-├── cmd
-│   └── main.go
-├── examples
-│   ├── create.http
-│   ├── delete.http
-│   ├── get.http
-│   ├── getAll.http
-│   └── update.http
-├── internal
-│   ├── app
-│   ├── config
-│   ├── handlers
-│   ├── middleware
-│   ├── models
-│   ├── server
-│   ├── services
-│   └── storage
-│       ├── memory
-│       └── postgres
-├── migration
-│   └── 001_create_users_table.sql
-└── README.md
+cmd/main.go                    entry point
+internal/
+  app/                         wiring, HTTP server, graceful shutdown
+  config/                      environment variables
+  delivery/                    Gin handlers, routes, logging middleware
+  services/                    business logic
+  domain/                      User model, UserStore interface, errors
+  storage/
+    memory/                    in-memory UserStore
+    postgres/                  PostgreSQL UserStore (database/sql + lib/pq)
+migration/                     SQL schema
+examples/                      .http request files
 ```
 
----
-
-## Архитектура
-
-- **handlers** — HTTP-слой  
-- **services** — бизнес-логика  
-- **storage** — интерфейс `UserStore` и его реализации  
-- **middleware** — логирование (`log/slog`)  
-- **models** — структуры данных
-
+`services` depends only on the `domain.UserStore` interface, so the storage is chosen at startup in `internal/app` with the `STORAGE` variable.
